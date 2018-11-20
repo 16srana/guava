@@ -16,14 +16,16 @@
 
 package com.google.common.collect;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.j2objc.annotations.Weak;
-
 import java.io.Serializable;
 import java.util.Map.Entry;
-
-import javax.annotation.Nullable;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * {@code values()} implementation for {@link ImmutableMap}.
@@ -62,6 +64,11 @@ final class ImmutableMapValues<K, V> extends ImmutableCollection<V> {
   }
 
   @Override
+  public Spliterator<V> spliterator() {
+    return CollectSpliterators.map(map.entrySet().spliterator(), Entry::getValue);
+  }
+
+  @Override
   public boolean contains(@Nullable Object object) {
     return object != null && Iterators.contains(iterator(), object);
   }
@@ -72,7 +79,7 @@ final class ImmutableMapValues<K, V> extends ImmutableCollection<V> {
   }
 
   @Override
-  ImmutableList<V> createAsList() {
+  public ImmutableList<V> asList() {
     final ImmutableList<Entry<K, V>> entryList = map.entrySet().asList();
     return new ImmutableAsList<V>() {
       @Override
@@ -85,6 +92,13 @@ final class ImmutableMapValues<K, V> extends ImmutableCollection<V> {
         return ImmutableMapValues.this;
       }
     };
+  }
+
+  @GwtIncompatible // serialization
+  @Override
+  public void forEach(Consumer<? super V> action) {
+    checkNotNull(action);
+    map.forEach((k, v) -> action.accept(v));
   }
 
   @GwtIncompatible // serialization
